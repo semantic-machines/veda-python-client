@@ -1,245 +1,270 @@
 # Veda Platform Python Client
 
-A Python client for interacting with the Veda Platform HTTP API.
+A client library for interacting with the Veda Platform HTTP API.
 
 ## Installation
 
-You can install the package directly from PyPI:
-
 ```bash
-pip install veda-client
-```
-
-Or from source:
-
-```bash
-pip install git+https://github.com/yourusername/veda-python-client.git
+pip install veda-platform-client
 ```
 
 ## Requirements
 
 - Python 3.6+
-- requests library
+- requests
 
-## Quick Start
+## Basic Usage
+
+### Initialization
 
 ```python
 from veda_client import VedaClient
 
-# Initialize client
-client = VedaClient(base_url="http://example.com/api")
-
-# Authenticate
-auth_response = client.authenticate(
-    login="your_username",
-    password="your_password_hash"
-)
-
-# Make a query
-results = client.query("( 'rdf:type'=='v-s:UserThing' )")
-
-# Get an individual
-individual = client.get_individual("v-ui:DefaultLanguage")
-print(individual.uri)  # Prints the URI
-print(individual.get_first_value("rdfs:label"))  # Prints the first label
-
-# Create and save a new individual
-from veda_client.models import Individual
-from veda_client.utils import create_value_item
-
-new_individual = Individual(uri="v-s:MyNewIndividual")
-new_individual.add_value("rdf:type", "v-s:Document", "Uri")
-new_individual.add_value("rdfs:label", "My New Document", "String", "EN")
-new_individual.add_value("rdfs:label", "Мой новый документ", "String", "RU")
-
-client.put_individual(new_individual)
+# Initialize the client with your API URL
+client = VedaClient(base_url="http://your-veda-instance.com/api")
 ```
-
-## API Documentation
 
 ### Authentication
 
 ```python
-client.authenticate(login, password, secret=None)
+# Authenticate with username and password
+auth_result = client.authenticate("username", "password")
+
+# After successful authentication, the client stores the ticket
+# for subsequent requests
+print(f"Authenticated as: {client.user_uri}")
+
+# Check if a ticket is valid
+is_valid = client.is_ticket_valid()
+
+# Logout (invalidate ticket)
+client.logout()
 ```
 
-Authenticates a user with login and password, and optionally a secret.
-
-### Query
+### Basic Data Operations
 
 ```python
-client.query(query, sort=None, databases=None, reopen=None, from_=None, top=None, limit=None, trace=None, ticket=None)
+from veda_client.models import Individual, ValueItem
+
+# Get a single individual
+individual = client.get_individual("document:123")
+
+# Get multiple individuals
+individuals = client.get_individuals(["document:123", "document:456"])
+
+# Create a new individual
+new_individual = Individual(uri="document:123")
+
+# Add values to the individual
+new_individual.add_value("rdf:type", "v-s:Document", "uri")
+new_individual.add_value("v-s:title", "Test Document", "string", "en")
+
+# Save the individual
+result = client.put_individual(new_individual)
+
+# Update a field
+update_individual = Individual(uri="document:123")
+update_individual.add_value("v-s:description", "Updated description", "string", "en")
+
+# Apply the update
+result = client.set_in_individual("document:123", update_individual)
+
+# Add a field
+add_individual = Individual(uri="document:123")
+add_individual.add_value("v-s:tag", "important", "string")
+
+# Apply the addition
+result = client.add_to_individual("document:123", add_individual)
+
+# Remove a field
+remove_individual = Individual(uri="document:123")
+remove_individual.add_value("v-s:tag", "important", "string")
+
+# Apply the removal
+result = client.remove_from_individual("document:123", remove_individual)
+
+# Delete an individual
+result = client.remove_individual("document:123")
 ```
 
-Execute a full text query against the stored data.
-
-### Individuals
-
-#### Get
+### Querying
 
 ```python
-client.get_individual(uri, reopen=None, ticket=None)
+# Execute a basic query
+result = client.query("'rdf:type' == 'v-s:Document'")
+
+# Query with sorting and limit
+result = client.query(
+    query="'rdf:type' == 'v-s:Document'",
+    sort="v-s:created",
+    limit=10
+)
+
+# Execute a stored query with parameters
+params = {
+    "type": "v-s:Document",
+    "limit": 10
+}
+result = client.stored_query("stored-query:DocumentSearch", params)
 ```
 
-Retrieve information about a specific individual.
+### File Operations
 
 ```python
-client.get_individuals(uris, reopen=None, ticket=None)
+# Upload a file
+file_id = client.upload_file("path/to/document.pdf")
+
+# Download a file
+success = client.download_file(file_id, "path/to/download/document.pdf")
 ```
 
-Retrieve information about multiple individuals.
-
-#### Put
+### Authorization
 
 ```python
-client.put_individual(individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
+# Get rights for a URI
+rights = client.get_rights("document:123")
+
+# Get rights origin
+rights_origin = client.get_rights_origin("document:123")
+
+# Get membership
+membership = client.get_membership("document:123")
 ```
 
-Update or insert information about an individual.
+### Session Management
 
 ```python
-client.put_individuals(individuals, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
+# Get a ticket for another user (admin operation)
+trusted_ticket = client.get_ticket_trusted("another_username")
 ```
 
-Update or insert information about multiple individuals.
+## API Reference
 
-#### Remove
+### Authentication and Session Management
 
-```python
-client.remove_individual(uri, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
-```
+#### `authenticate(login, password, secret=None)`
+Authenticate a user with login and password.
 
-Remove information about a specific individual.
-
-```python
-client.remove_from_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
-```
-
-Remove a specific field from the information of an individual.
-
-#### Modify
-
-```python
-client.set_in_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
-```
-
-Set or update a specific field in the information of an individual.
-
-```python
-client.add_to_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)
-```
-
-Add a specific field to the information of an individual.
-
-### Access Rights
-
-```python
-client.get_rights(uri, ticket=None)
-```
-
-Retrieve the access rights for a specific URI.
-
-```python
-client.get_rights_origin(uri, ticket=None)
-```
-
-Retrieve information about the origin of access rights for a specific URI.
-
-```python
-client.get_membership(uri, ticket=None)
-```
-
-Retrieve membership information of a specific URI.
-
-### Other
-
-```python
-client.is_ticket_valid(ticket=None)
-```
-
+#### `is_ticket_valid(ticket=None)`
 Check if the provided ticket is valid.
 
-```python
-client.get_ticket_trusted(login, ticket=None)
-```
-
+#### `get_ticket_trusted(login, ticket=None)`
 Get a ticket trusted for use by another user.
 
-```python
-client.get_operation_state(module_id, wait_op_id)
-```
+#### `logout(ticket=None)`
+Logout a user and invalidate their ticket.
 
+### Individual Operations
+
+#### `get_individual(uri, reopen=None, ticket=None)`
+Retrieve information about a specific individual.
+
+#### `get_individuals(uris, reopen=None, ticket=None)`
+Retrieve information about multiple individuals.
+
+#### `put_individual(individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Update or insert information about an individual.
+
+#### `put_individuals(individuals, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Update or insert information about multiple individuals.
+
+#### `remove_individual(uri, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Remove information about a specific individual.
+
+#### `remove_from_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Remove a specific field from the information of an individual.
+
+#### `set_in_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Set or update a specific field in the information of an individual.
+
+#### `add_to_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+Add a specific field to the information of an individual.
+
+### Query Operations
+
+#### `query(query, sort=None, databases=None, reopen=None, from_=None, top=None, limit=None, trace=None, ticket=None)`
+Execute a full text query against the stored data.
+
+#### `stored_query(stored_query_id, params, ticket=None)`
+Execute a stored query with parameters.
+
+### Authorization Operations
+
+#### `get_rights(uri, ticket=None)`
+Retrieve the access rights for a specific URI.
+
+#### `get_rights_origin(uri, ticket=None)`
+Retrieve information about the origin of access rights for a specific URI.
+
+#### `get_membership(uri, ticket=None)`
+Retrieve membership information of a specific URI.
+
+### File Operations
+
+#### `upload_file(file_path, ticket=None)`
+Upload a file to the server.
+
+#### `download_file(file_id, output_path, ticket=None)`
+Download a file from the server.
+
+### Operation Monitoring
+
+#### `get_operation_state(module_id, wait_op_id)`
 Retrieve the state of a specified operation.
 
-## Models
+## Data Models
 
 ### Individual
 
-Represents an individual in the Veda data model.
+The `Individual` class represents an entity in the Veda Platform data model.
 
 ```python
-from veda_client.models import Individual
+from veda_client.models import Individual, ValueItem
 
 # Create a new individual
-individual = Individual(uri="v-s:MyIndividual")
+individual = Individual(uri="document:123")
 
-# Add a property value
-individual.add_value("rdfs:label", "My Label", "String", "EN")
+# Add values to the individual
+individual.add_value("rdf:type", "v-s:Document", "uri")
+individual.add_value("v-s:title", "Test Document", "string", "en")
+individual.add_value("v-s:created", "2023-01-01T12:00:00Z", "dateTime")
 
-# Get a property
-labels = individual.get_property("rdfs:label")
+# Get values from the individual
+title_values = individual.get_property("v-s:title")
+first_title = individual.get_first_value("v-s:title")
 
-# Get the first value of a property
-first_label = individual.get_first_value("rdfs:label")
-
-# Set a property with multiple values
-individual.set_property("rdfs:label", [
-    {"data": "My Label", "type": "String", "lang": "EN"},
-    {"data": "Моя метка", "type": "String", "lang": "RU"}
-])
-
-# Remove a property
-individual.remove_property("rdfs:comment")
+# Convert to/from dictionary
+individual_dict = individual.to_dict()
+from_dict_individual = Individual.from_dict(individual_dict)
 ```
 
-### ValueItem
+## Error Handling
 
-Represents a value item in the Veda data model.
+The client defines several exception types for different error scenarios:
 
-```python
-from veda_client.models import ValueItem
-
-# Create a new value item
-value = ValueItem(data="My Value", type_="String", lang="EN")
-
-# Convert to dictionary
-value_dict = value.to_dict()
-```
-
-## Utility Functions
+- `VedaError`: Base exception for all Veda client errors
+- `VedaAuthError`: Authentication errors
+- `VedaRequestError`: Invalid request errors
+- `VedaResponseError`: Errors in API responses
+- `VedaServerError`: Server errors
 
 ```python
-from veda_client.utils import hash_password, build_query_string, create_individual, create_value_item, extract_values
+from veda_client import VedaClient
+from veda_client.exceptions import VedaAuthError, VedaServerError
 
-# Hash a password
-hash_password("my_password")
+client = VedaClient("http://your-veda-instance.com/api")
 
-# Build a query string from conditions
-build_query_string({"rdf:type": "v-s:Document", "v-s:created": "2023-01-01"})
+try:
+    client.authenticate("username", "wrong_password")
+except VedaAuthError as e:
+    print(f"Authentication failed: {e}")
 
-# Create an individual from a dictionary
-create_individual("v-s:MyIndividual", {
-    "rdf:type": [{"data": "v-s:Document", "type": "Uri"}],
-    "rdfs:label": [{"data": "My Document", "type": "String", "lang": "EN"}]
-})
-
-# Create a value item
-create_value_item("My Value", "String", "EN")
-
-# Extract all values for a property
-extract_values(individual, "rdfs:label")
+try:
+    client.get_individual("non-existent-uri")
+except VedaServerError as e:
+    print(f"Server error: {e}")
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License

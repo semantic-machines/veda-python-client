@@ -4,6 +4,8 @@ Main client implementation for interacting with the Veda Platform API.
 
 import json
 import requests
+import uuid
+from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 
 from .exceptions import (
@@ -149,6 +151,33 @@ class VedaClient:
         response = requests.get(url, params=params)
         return self._handle_response(response)
     
+    def logout(self, ticket: Optional[str] = None) -> bool:
+        """
+        Logout a user and invalidate their ticket.
+        
+        Args:
+            ticket: The ticket to invalidate. If not provided, uses the client's stored ticket.
+            
+        Returns:
+            True if logout was successful, False otherwise.
+        """
+        if ticket is None:
+            ticket = self.ticket
+            
+        if not ticket:
+            raise VedaAuthError("No ticket provided and no ticket stored in the client")
+        
+        url = f"{self.base_url}/logout"
+        response = requests.get(url, params={"ticket": ticket})
+        
+        if response.status_code == 200:
+            if self.ticket == ticket:
+                self.ticket = None
+                self.user_uri = None
+            return True
+        
+        return False
+    
     def query(
         self,
         query: str,
@@ -186,8 +215,11 @@ class VedaClient:
         
         url = f"{self.base_url}/query"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "query": query
         }
         
@@ -206,7 +238,40 @@ class VedaClient:
         if trace is not None:
             data["trace"] = trace
         
-        response = requests.post(url, json=data)
+        response = requests.post(url, params=params, json=data)
+        return self._handle_response(response)
+    
+    def stored_query(self, stored_query_id: str, params: Dict[str, Any], ticket: Optional[str] = None) -> dict:
+        """
+        Execute a stored query with parameters.
+        
+        Args:
+            stored_query_id: The ID of the stored query.
+            params: Parameters for the query.
+            ticket: The user's ticket. If not provided, uses the client's stored ticket.
+            
+        Returns:
+            Query results.
+        """
+        if ticket is None:
+            ticket = self.ticket
+            
+        if not ticket:
+            raise VedaAuthError("No ticket provided and no ticket stored in the client")
+        
+        url = f"{self.base_url}/stored_query"
+        
+        # Send ticket as query parameter
+        query_params = {"ticket": ticket}
+        
+        # Create a query parameters object that includes the stored query ID
+        query_data = {"v-s:storedQuery": stored_query_id}
+        
+        # Add any additional parameters
+        for key, value in params.items():
+            query_data[key] = value
+        
+        response = requests.post(url, params=query_params, json=query_data)
         return self._handle_response(response)
     
     def get_individual(self, uri: str, reopen: Optional[bool] = None, ticket: Optional[str] = None) -> Individual:
@@ -262,15 +327,18 @@ class VedaClient:
         
         url = f"{self.base_url}/get_individuals"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "uris": uris
         }
         
         if reopen is not None:
             data["reopen"] = reopen
         
-        response = requests.post(url, json=data)
+        response = requests.post(url, params=params, json=data)
         result = self._handle_response(response)
         
         # Convert the list of dictionaries to a list of Individual objects
@@ -307,14 +375,17 @@ class VedaClient:
         
         url = f"{self.base_url}/put_individual"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
         # Convert Individual object to dict if needed
         if isinstance(individual, Individual):
             individual_dict = individual.to_dict()
         else:
             individual_dict = individual
         
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "individual": individual_dict
         }
         
@@ -327,7 +398,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def put_individuals(
@@ -361,6 +432,9 @@ class VedaClient:
         
         url = f"{self.base_url}/put_individuals"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
         # Convert Individual objects to dicts if needed
         individuals_dict = []
         for individual in individuals:
@@ -369,8 +443,8 @@ class VedaClient:
             else:
                 individuals_dict.append(individual)
         
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "individuals": individuals_dict
         }
         
@@ -383,7 +457,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def remove_individual(
@@ -417,8 +491,11 @@ class VedaClient:
         
         url = f"{self.base_url}/remove_individual"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "uri": uri
         }
         
@@ -431,7 +508,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def remove_from_individual(
@@ -467,14 +544,17 @@ class VedaClient:
         
         url = f"{self.base_url}/remove_from_individual"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
         # Convert Individual object to dict if needed
         if isinstance(individual, Individual):
             individual_dict = individual.to_dict()
         else:
             individual_dict = individual
         
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "uri": uri,
             "individual": individual_dict
         }
@@ -488,7 +568,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def set_in_individual(
@@ -524,14 +604,17 @@ class VedaClient:
         
         url = f"{self.base_url}/set_in_individual"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
         # Convert Individual object to dict if needed
         if isinstance(individual, Individual):
             individual_dict = individual.to_dict()
         else:
             individual_dict = individual
         
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "uri": uri,
             "individual": individual_dict
         }
@@ -545,7 +628,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def add_to_individual(
@@ -581,14 +664,17 @@ class VedaClient:
         
         url = f"{self.base_url}/add_to_individual"
         
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
         # Convert Individual object to dict if needed
         if isinstance(individual, Individual):
             individual_dict = individual.to_dict()
         else:
             individual_dict = individual
         
+        # Send other data in the request body
         data = {
-            "ticket": ticket,
             "uri": uri,
             "individual": individual_dict
         }
@@ -602,7 +688,7 @@ class VedaClient:
         if transaction_id:
             data["transaction_id"] = transaction_id
         
-        response = requests.put(url, json=data)
+        response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
     
     def get_rights(self, uri: str, ticket: Optional[str] = None) -> dict:
@@ -713,3 +799,82 @@ class VedaClient:
                 raise VedaResponseError("Invalid response format for operation state")
         
         self._handle_response(response)  # This will raise an appropriate exception
+    
+    def upload_file(self, file_path: str, ticket: Optional[str] = None) -> str:
+        """
+        Upload a file to the server.
+        
+        Args:
+            file_path: Path to the file to upload.
+            ticket: The user's ticket. If not provided, uses the client's stored ticket.
+            
+        Returns:
+            File ID on the server.
+        """
+        if ticket is None:
+            ticket = self.ticket
+            
+        if not ticket:
+            raise VedaAuthError("No ticket provided and no ticket stored in the client")
+        
+        url = f"{self.base_url}/files"
+        
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
+        # Create a unique ID for the file
+        file_id = str(uuid.uuid4())
+        
+        # Create a multipart form-data request
+        filename = Path(file_path).name
+        
+        with open(file_path, 'rb') as f:
+            files = {
+                'file': (filename, f, 'application/octet-stream'),
+                'uri': (None, file_id),
+                'path': (None, 'files')
+            }
+            response = requests.post(url, params=params, files=files)
+        
+        if response.status_code == 200:
+            return file_id
+        else:
+            self._handle_response(response)  # This will raise an exception
+            return ""  # This line will never be reached
+
+    def download_file(self, file_id: str, output_path: str, ticket: Optional[str] = None) -> bool:
+        """
+        Download a file from the server.
+        
+        Args:
+            file_id: The ID of the file to download.
+            output_path: Path where to save the downloaded file.
+            ticket: The user's ticket. If not provided, uses the client's stored ticket.
+            
+        Returns:
+            True if download was successful.
+        """
+        if ticket is None:
+            ticket = self.ticket
+            
+        if not ticket:
+            raise VedaAuthError("No ticket provided and no ticket stored in the client")
+        
+        url = f"{self.base_url}/files/{file_id}"
+        
+        # Send ticket as query parameter
+        params = {"ticket": ticket}
+        
+        response = requests.get(url, params=params, stream=True)
+        
+        if response.status_code == 200:
+            with open(output_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            return True
+        else:
+            try:
+                self._handle_response(response)  # This will raise an exception
+            except:
+                return False
+            return False  # This line will never be reached
