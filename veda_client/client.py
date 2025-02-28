@@ -351,6 +351,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -362,6 +363,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -397,6 +399,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
@@ -408,6 +412,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -419,6 +424,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -456,6 +462,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
@@ -467,6 +475,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -478,6 +487,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -507,6 +517,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
@@ -519,6 +531,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -531,6 +544,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -567,6 +581,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
@@ -579,6 +595,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -591,6 +608,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -627,6 +645,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)
@@ -639,6 +659,7 @@ class VedaClient:
         assigned_subsystems: Optional[int] = None,
         event_id: Optional[str] = None,
         transaction_id: Optional[str] = None,
+        src: Optional[str] = None,
         ticket: Optional[str] = None
     ) -> dict:
         """
@@ -651,6 +672,7 @@ class VedaClient:
             assigned_subsystems: Optional byte value for assigned subsystems.
             event_id: Optional event identifier.
             transaction_id: Optional transaction identifier.
+            src: Optional source identifier.
             ticket: The user's ticket. If not provided, uses the client's stored ticket.
             
         Returns:
@@ -687,6 +709,8 @@ class VedaClient:
             data["event_id"] = event_id
         if transaction_id:
             data["transaction_id"] = transaction_id
+        if src:
+            data["src"] = src
         
         response = requests.put(url, params=params, json=data)
         return self._handle_response(response)

@@ -2,6 +2,10 @@
 
 A client library for interacting with the Veda Platform HTTP API.
 
+## Build
+
+python setup.py bdist_wheel
+
 ## Installation
 
 ```bash
