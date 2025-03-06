@@ -70,8 +70,8 @@ result = client.put_individual(new_individual)
 update_individual = Individual(uri="document:123")
 update_individual.add_value("v-s:description", "Updated description", "string", "en")
 
-# Apply the update
-result = client.set_in_individual("document:123", update_individual)
+# Apply the update (using source tracking)
+result = client.set_in_individual("document:123", update_individual, src="editor-application")
 
 # Add a field
 add_individual = Individual(uri="document:123")
@@ -166,22 +166,22 @@ Retrieve information about a specific individual.
 #### `get_individuals(uris, reopen=None, ticket=None)`
 Retrieve information about multiple individuals.
 
-#### `put_individual(individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `put_individual(individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Update or insert information about an individual.
 
-#### `put_individuals(individuals, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `put_individuals(individuals, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Update or insert information about multiple individuals.
 
-#### `remove_individual(uri, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `remove_individual(uri, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Remove information about a specific individual.
 
-#### `remove_from_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `remove_from_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Remove a specific field from the information of an individual.
 
-#### `set_in_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `set_in_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Set or update a specific field in the information of an individual.
 
-#### `add_to_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, ticket=None)`
+#### `add_to_individual(uri, individual, prepare_events=None, assigned_subsystems=None, event_id=None, transaction_id=None, src=None, ticket=None)`
 Add a specific field to the information of an individual.
 
 ### Query Operations
@@ -240,6 +240,21 @@ first_title = individual.get_first_value("v-s:title")
 # Convert to/from dictionary
 individual_dict = individual.to_dict()
 from_dict_individual = Individual.from_dict(individual_dict)
+```
+
+## Source Tracking
+
+The client supports tracking the source of data modifications through the `src` parameter in all update methods. This allows applications to identify which component made each modification:
+
+```python
+# Create a new document from a specific application
+client.put_individual(document, src="document-editor")
+
+# Update document from another application
+client.set_in_individual(document.uri, update_data, src="workflow-engine")
+
+# Delete document from admin panel
+client.remove_individual(document.uri, src="admin-panel")
 ```
 
 ## Error Handling

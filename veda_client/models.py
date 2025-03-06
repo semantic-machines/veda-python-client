@@ -179,3 +179,73 @@ class Individual:
         """
         if key in self.properties:
             del self.properties[key]
+    
+    def set_value(self, key: str, data: Any, type_: str, lang: Optional[str] = None) -> None:
+        """
+        Устанавливает одно значение свойства, удаляя все предыдущие значения.
+        
+        Args:
+            key: Ключ свойства.
+            data: Данные значения.
+            type_: Тип данных.
+            lang: Опциональный код языка.
+        """
+        self.properties[key] = [ValueItem(data=data, type_=type_, lang=lang)]
+    
+    def replace_value(self, key: str, old_data: Any, new_data: Any, type_: str, lang: Optional[str] = None) -> bool:
+        """
+        Заменяет существующее значение на новое, если старое значение существует.
+        
+        Args:
+            key: Ключ свойства.
+            old_data: Старые данные для замены.
+            new_data: Новые данные.
+            type_: Тип данных.
+            lang: Опциональный код языка.
+            
+        Returns:
+            True если значение было заменено, False в противном случае.
+        """
+        if key not in self.properties:
+            return False
+        
+        for i, value_item in enumerate(self.properties[key]):
+            if value_item.data == old_data:
+                self.properties[key][i] = ValueItem(data=new_data, type_=type_, lang=lang)
+                return True
+        
+        return False
+    
+    def remove_value(self, key: str, data: Any) -> bool:
+        """
+        Удаляет конкретное значение из свойства.
+        
+        Args:
+            key: Ключ свойства.
+            data: Данные для удаления.
+            
+        Returns:
+            True если значение было удалено, False в противном случае.
+        """
+        if key not in self.properties:
+            return False
+        
+        original_length = len(self.properties[key])
+        self.properties[key] = [item for item in self.properties[key] if item.data != data]
+        
+        return len(self.properties[key]) < original_length
+    
+    def remove_predicate(self, predicate: str) -> bool:
+        """
+        Удаляет предикат из набора предикатов.
+        
+        Args:
+            predicate: Предикат (ключ свойства) для удаления.
+            
+        Returns:
+            True если предикат был удален, False если он не существовал.
+        """
+        if predicate in self.properties:
+            del self.properties[predicate]
+            return True
+        return False
