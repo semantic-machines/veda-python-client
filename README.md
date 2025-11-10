@@ -237,6 +237,42 @@ individual.add_value("v-s:created", "2023-01-01T12:00:00Z", "dateTime")
 title_values = individual.get_property("v-s:title")
 first_title = individual.get_first_value("v-s:title")
 
+# Set a single value (removes any existing values)
+individual.set_value("v-s:title", "New Title", "string", "en")
+
+# Replace a specific value
+individual.replace_value("v-s:tag", "old-tag", "new-tag", "string")
+
+# Remove a specific value
+individual.remove_value("v-s:tag", "unwanted-tag")
+
+# Remove an entire predicate
+individual.remove_predicate("v-s:tag")
+
+# Set URI value helpers
+individual.set_uri("v-s:creator", "person:123")
+individual.add_uri("v-s:hasResponsible", "person:456")
+
+# Set string value helpers
+individual.set_string("v-s:description", "Document description", "en")
+individual.add_string("v-s:tag", "important")
+
+# Set integer value helpers
+individual.set_integer("v-s:priority", 1)
+individual.add_integer("v-s:version", 2)
+
+# Set decimal value helpers
+individual.set_decimal("v-s:amount", 123.45)
+individual.add_decimal("v-s:rate", 0.75)
+
+# Set datetime value helpers
+individual.set_datetime("v-s:created", "2023-01-01T12:00:00Z")
+individual.add_datetime("v-s:modified", "2023-01-02T15:30:00Z")
+
+# Set boolean value helpers
+individual.set_boolean("v-s:isActive", True)
+individual.add_boolean("v-s:isDeleted", False)
+
 # Convert to/from dictionary
 individual_dict = individual.to_dict()
 from_dict_individual = Individual.from_dict(individual_dict)
