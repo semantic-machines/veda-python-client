@@ -2,6 +2,7 @@
 Data models for the Veda Platform API.
 """
 
+from datetime import datetime
 from typing import Dict, List, Any, Optional, Union, TypeVar, Generic
 
 
@@ -48,18 +49,26 @@ class ValueItem:
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the ValueItem to a dictionary.
-        
+
+        If the type is "Datetime" and data is a datetime object, it is automatically
+        formatted into a string compatible with the Veda server.
+
         Returns:
             Dictionary representation of the ValueItem.
         """
+        data = self.data
+        if self.type == "Datetime" and isinstance(data, datetime):
+            from .utils import format_datetime
+            data = format_datetime(data)
+
         result = {
-            "data": self.data,
+            "data": data,
             "type": self.type
         }
-        
+
         if self.lang:
             result["lang"] = self.lang
-        
+
         return result
 
 
@@ -169,6 +178,36 @@ class Individual:
             self.properties[key] = []
         
         self.properties[key].append(ValueItem(data=data, type_=type_, lang=lang))
+
+    def add_datetime_value(self, key: str, dt: datetime) -> None:
+        """
+        Add a datetime value to a property, formatted for the Veda server.
+
+        Timezone-aware datetimes are converted to UTC with a 'Z' suffix.
+        Naive datetimes are formatted without timezone info.
+        Microseconds are always stripped to match the server's expected format.
+
+        Args:
+            key: The property key.
+            dt: The datetime object to add.
+        """
+        from .utils import format_datetime
+        self.add_value(key, format_datetime(dt), "Datetime")
+
+    def set_datetime_value(self, key: str, dt: datetime) -> None:
+        """
+        Set a datetime property to a single value, replacing any existing values.
+
+        Timezone-aware datetimes are converted to UTC with a 'Z' suffix.
+        Naive datetimes are formatted without timezone info.
+        Microseconds are always stripped to match the server's expected format.
+
+        Args:
+            key: The property key.
+            dt: The datetime object to set.
+        """
+        from .utils import format_datetime
+        self.properties[key] = [ValueItem(data=format_datetime(dt), type_="Datetime")]
     
     def remove_property(self, key: str) -> None:
         """

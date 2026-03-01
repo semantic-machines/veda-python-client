@@ -14,4 +14,4 @@ from .exceptions import (
 )
 from .models import Individual
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"

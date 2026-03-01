@@ -3,8 +3,28 @@ Utility functions for the Veda Platform API client.
 """
 
 import hashlib
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Union
 from .models import Individual, ValueItem
+
+
+def format_datetime(dt: datetime) -> str:
+    """
+    Format a datetime object into a string compatible with the Veda server.
+
+    Timezone-aware datetimes are converted to UTC and formatted with a 'Z' suffix.
+    Naive datetimes are formatted without timezone info and without microseconds.
+
+    Args:
+        dt: The datetime object to format.
+
+    Returns:
+        ISO 8601 datetime string without microseconds, accepted by the Veda server.
+    """
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        return dt.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def hash_password(password: str) -> str:

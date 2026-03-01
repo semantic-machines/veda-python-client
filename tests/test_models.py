@@ -3,7 +3,9 @@ Tests for the Veda Platform API models.
 """
 
 import unittest
+from datetime import datetime, timezone, timedelta
 from veda_client.models import Individual, ValueItem
+from veda_client.utils import format_datetime
 
 
 class TestValueItem(unittest.TestCase):
@@ -168,6 +170,110 @@ class TestIndividual(unittest.TestCase):
         
         # Remove non-existing property (should not raise an error)
         individual.remove_property("non:existing")
+
+
+class TestFormatDatetime(unittest.TestCase):
+    """Test cases for the format_datetime utility function."""
+
+    def test_naive_datetime_no_microseconds(self):
+        """Naive datetime without microseconds is formatted as-is."""
+        dt = datetime(2026, 3, 1, 18, 49, 13)
+        self.assertEqual(format_datetime(dt), "2026-03-01T18:49:13")
+
+    def test_naive_datetime_strips_microseconds(self):
+        """Naive datetime with microseconds has them stripped."""
+        dt = datetime(2026, 3, 1, 18, 49, 13, 604389)
+        self.assertEqual(format_datetime(dt), "2026-03-01T18:49:13")
+
+    def test_utc_aware_datetime(self):
+        """UTC-aware datetime is formatted with Z suffix."""
+        dt = datetime(2026, 3, 1, 18, 49, 13, tzinfo=timezone.utc)
+        self.assertEqual(format_datetime(dt), "2026-03-01T18:49:13Z")
+
+    def test_utc_aware_datetime_strips_microseconds(self):
+        """UTC-aware datetime with microseconds has them stripped."""
+        dt = datetime(2026, 3, 1, 18, 49, 13, 604389, tzinfo=timezone.utc)
+        self.assertEqual(format_datetime(dt), "2026-03-01T18:49:13Z")
+
+    def test_offset_aware_datetime_converted_to_utc(self):
+        """Offset-aware datetime is converted to UTC before formatting."""
+        tz_plus3 = timezone(timedelta(hours=3))
+        dt = datetime(2026, 3, 1, 21, 49, 13, tzinfo=tz_plus3)
+        self.assertEqual(format_datetime(dt), "2026-03-01T18:49:13Z")
+
+
+class TestValueItemDatetime(unittest.TestCase):
+    """Test cases for ValueItem datetime serialization."""
+
+    def test_to_dict_with_datetime_object(self):
+        """ValueItem with type Datetime and datetime object serializes correctly."""
+        dt = datetime(2026, 3, 1, 18, 49, 13, 604389, tzinfo=timezone.utc)
+        item = ValueItem(data=dt, type_="Datetime")
+        result = item.to_dict()
+        self.assertEqual(result["data"], "2026-03-01T18:49:13Z")
+        self.assertEqual(result["type"], "Datetime")
+
+    def test_to_dict_with_string_data_unchanged(self):
+        """ValueItem with type Datetime and string data passes through unchanged."""
+        item = ValueItem(data="2026-03-01T18:49:13Z", type_="Datetime")
+        result = item.to_dict()
+        self.assertEqual(result["data"], "2026-03-01T18:49:13Z")
+
+    def test_to_dict_non_datetime_type_unchanged(self):
+        """ValueItem with non-Datetime type and datetime-like object is not converted."""
+        item = ValueItem(data="2026-03-01T18:49:13.604389", type_="String")
+        result = item.to_dict()
+        self.assertEqual(result["data"], "2026-03-01T18:49:13.604389")
+
+
+class TestIndividualDatetimeMethods(unittest.TestCase):
+    """Test cases for Individual datetime helper methods."""
+
+    def test_add_datetime_value_naive(self):
+        """add_datetime_value with naive datetime stores formatted string."""
+        individual = Individual(uri="test:1")
+        dt = datetime(2026, 3, 1, 18, 49, 13, 604389)
+        individual.add_datetime_value("v-s:lastSeen", dt)
+
+        values = individual.get_property("v-s:lastSeen")
+        self.assertEqual(len(values), 1)
+        self.assertEqual(values[0].type, "Datetime")
+        self.assertEqual(values[0].data, "2026-03-01T18:49:13")
+
+    def test_add_datetime_value_utc(self):
+        """add_datetime_value with UTC datetime stores formatted string with Z."""
+        individual = Individual(uri="test:1")
+        dt = datetime(2026, 3, 1, 18, 49, 13, 604389, tzinfo=timezone.utc)
+        individual.add_datetime_value("v-s:lastSeen", dt)
+
+        values = individual.get_property("v-s:lastSeen")
+        self.assertEqual(values[0].data, "2026-03-01T18:49:13Z")
+
+    def test_add_datetime_value_appends(self):
+        """add_datetime_value appends to existing values."""
+        individual = Individual(uri="test:1")
+        individual.add_datetime_value("v-s:date", datetime(2026, 1, 1))
+        individual.add_datetime_value("v-s:date", datetime(2026, 6, 1))
+        self.assertEqual(len(individual.get_property("v-s:date")), 2)
+
+    def test_set_datetime_value_replaces(self):
+        """set_datetime_value replaces all existing values."""
+        individual = Individual(uri="test:1")
+        individual.add_datetime_value("v-s:lastSeen", datetime(2026, 1, 1))
+        individual.add_datetime_value("v-s:lastSeen", datetime(2026, 2, 1))
+        individual.set_datetime_value("v-s:lastSeen", datetime(2026, 3, 1, 18, 49, 13, 604389))
+
+        values = individual.get_property("v-s:lastSeen")
+        self.assertEqual(len(values), 1)
+        self.assertEqual(values[0].data, "2026-03-01T18:49:13")
+
+    def test_to_dict_contains_formatted_datetime(self):
+        """to_dict() on Individual with datetime value contains correct string."""
+        individual = Individual(uri="test:1")
+        individual.add_datetime_value("v-s:lastSeen", datetime(2026, 3, 1, 18, 49, 13, 604389, tzinfo=timezone.utc))
+
+        data = individual.to_dict()
+        self.assertEqual(data["v-s:lastSeen"][0]["data"], "2026-03-01T18:49:13Z")
 
 
 if __name__ == '__main__':
